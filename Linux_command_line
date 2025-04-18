@@ -1,0 +1,2 @@
+# 仅复制目录下的文件，不包括目录
+cp /path/to/source_directory/* /path/to/destination_directory/
