@@ -9,7 +9,8 @@
   	--weir-fst-pop merged.txt \   #族群2的样本ID
   	--out Han_vs_Tibetan          #结果命名
 # 另一种是按照区域（窗口式）计算，vcf最好包括上下游区域
-  vcftools --vcf test.vcf --weir-fst-pop population_1.txt --weir-fst-pop population_2.txt --out P_1_2 --fst-window-size 500000 --fst-window-step 50000
+#!bin/bash
+  /share/apps/gene/vcftools-0.1.16/bin/vcftools --vcf Han_Tibetan.chrX.vcf --weir-fst-pop Han90.txt --weir-fst-pop merged.txt --out Han_vs_Tibetan.chrX.win10k.s5k --fst-window-size 10000 --fst-window-step 5000
 # 窗口式计算出的Fst值的可靠性要高于单点SNP（一些说法认为），同时可以可视化
 ### Fst结果分析
 # Fst是针对一对等位基因，即双等位基因
