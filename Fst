@@ -1,0 +1,73 @@
+# Fst分析
+  # 确保：只能输入一个vcf文件，vcftools​​：支持普通VCF或压缩的VCF.gz文件，但需确保文件已索引，该vcf文件包括不同族群，因此需要输入不同族群的样本ID .txt文件，注意此文件只包含样本ID，每行一个ID
+  # vcftools在使用--weir-fst-pop参数进行FST计算时，​​最多支持直接比较两个族群​​。
+  # vcf文件：一般以全基因组或单条染色体为背景，使用包含上下游的VCF文件能提高FST窗口计算的准确性和灵活性，尤其适用于基因组选择信号分析。若仅用特定区域的小范围VCF，可能导致统计偏差或遗漏关键信号。实际操作中，可通过参数调整和结果过滤来聚焦研究区域，而非限制输入文件范围。
+# 单点计算（即单个位点的FST值）不需要包含上下游区域  
+#!bin/bash
+  /share/apps/gene/vcftools-0.1.16/bin/vcftools --vcf Han_Tibetan.vcf \    #vcf文件名词
+  	--weir-fst-pop Han90.txt \    #族群1的样本ID
+  	--weir-fst-pop merged.txt \   #族群2的样本ID
+  	--out Han_vs_Tibetan          #结果命名
+# 另一种是按照区域（窗口式）计算，vcf最好包括上下游区域
+  vcftools --vcf test.vcf --weir-fst-pop population_1.txt --weir-fst-pop population_2.txt --out P_1_2 --fst-window-size 500000 --fst-window-step 50000
+# 窗口式计算出的Fst值的可靠性要高于单点SNP（一些说法认为），同时可以可视化
+### Fst结果分析
+# Fst是针对一对等位基因，即双等位基因
+# Fst叫固定分化指数，用于估计亚群间平均多态性大小与整个种群平均多态性大小的差异，反映的是群体结构的变化。Fst的取值范围是[0,1]
+# 当Fst=1时，表明亚群间有着明显的种群分化，值越高表示分化程度越高。在中性进化条件下，Fst的大小主要取决于遗传漂变和迁移等因素的影响。
+# 假设种群中的某个等位基因对特定环境的适应度较高而经历适应性选择，那该基因的频率在种群中会升高，种群的分化水平增大，群体Fst升高。
+# 在实际的研究中Fst值为0--0.05时说明群体间遗传分化很小，可以不做考虑；
+    # 为0.05--0.15时，表明群体间存在中等程度的遗传分化；
+    # 为0.15--0.25时群体间存在较大的遗传分化；
+    # 为0.25以上的时候群体间就存在很大的遗传分化了。
+# Fst出现负值
+# 在理论上，Fst的取值范围应该是0到1之间，因为它表示遗传变异中由于群体间差异导致的比例。然而，Fst在实际计算中偶尔可能呈现负值。这通常是由于计算过程中的数值问题、样本大小差异或者遗传标记的性质等原因引起的。主要的原因之一是采用的遗传标记的多态性较低，导致了一些计算中的困难。当某个位点上的变异性非常有限时，Fst的计算可能会受到限制。此外，当样本容量较小时，由于统计噪声的影响，Fst的估计也可能变得不稳定。
+# 解决这个问题的方法通常包括：
+  # 检查数据： 检查数据中是否存在错误或异常值，确保数据质量。
+  # 使用更多的遗传标记： 增加使用的遗传标记数量，以提高Fst的稳定性和准确性。
+  # 考虑样本大小： 在计算Fst时，确保各个群体的样本大小相对均衡，以减少样本大小差异可能导致的影响。
+  # 使用不同的计算方法： 有时候，使用不同的Fst计算方法或调整计算的参数可能有助于解决负值的问题。
+#虽然Fst的负值可能是数值计算问题的结果，但在解释数据时，研究人员通常会将其视为0，因为Fst不能为负。在实际应用中，对数据的审查和验证是非常重要的，以确保Fst的结果是可靠和合理的。
+# Fst窗口作图
+rm(list = ls())
+setwd('/public/liujin/Tick/RM/fst')
+library(qqman)
+library(Cairo)
+library("CMplot")
+library(dplyr)
+library(devtools)
+Fstfile<-read.table("Fst.southeast.southwest.10kb.windowed.weir.fst", header=T, stringsAsFactors=F)
+Fstfile[Fstfile$MEAN_FST<0,6]<-0
+Fstfile$MEAN_FST<-as.numeric(Fstfile$MEAN_FST)
+u<-mean(Fstfile$MEAN_FST)
+aa<-sd(Fstfile$MEAN_FST)
+Fstfile$Zscore<-(abs(Fstfile$MEAN_FST-u))/aa
+Fstfile <- subset(Fstfile, Fstfile$N_VARIANTS>20)
+top <- 0.01
+thread <- quantile(Fstfile$Zscore,as.numeric(1-top),na.rm=T)
+Fstfile2 <- subset(Fstfile, Fstfile$Zscore>=thread)
+write.table(Fstfile1,file="fst.ce.se.10kb.norm",row.names = F,col.names = F,sep = " ",quote = F)
+#作图
+library("CMplot")
+SNP<-paste(Fstfile[,1],Fstfile[,2],sep = ":")
+Fstfile=cbind(SNP,Fstfile)
+Fstfile1<-Fstfile[,c(1,2,3,8)]
+colnames(Fstfile1)<-c("SNP","Chromosome","Position","P")
+#Fstfile1<- Fstfile1[!is.na(Fstfile1$FST),]
+#Fstfile1 = Fstfile1[Fstfile1$FST> 0, ]
+#Fstfile1 = Fstfile1[Fstfile1$FST< 1, ]
+p<-CMplot(Fstfile1,
+#type = "p",
+threshold = thread,
+plot.type = "m",
+LOG10 = F,
+cex = 0.2,
+band = 0.5,
+ylab.pos = 3,
+cex.axis = 1,
+col=c("#2878B5","#54B345","#FF8884"),
+ylab="Z(Fst(SCC_SWC))",
+file="pdf",memo="FST",
+dpi=300,file.output=T,verbose=TRUE,width=14,height=6,
+)
+
