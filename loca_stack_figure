@@ -1,0 +1,51 @@
+rm = list(ls())
+summary <- data.frame(
+  Population = c(rep("Han", 4), rep("Tibetan", 5)),
+  Category = c("Frequency", "Frequency", "Ton", "Ton", "Frequency", "Frequency", "Ton", "Ton", "Ton"),
+  Subtype = c("Common", "Rare", "Singleton", "Doubleton", "Common", "Rare", "Singleton", "Doubleton", "Tripleton"),
+  Count = c(23, 0, 11, 3, 10, 85, 35, 38, 11)
+)
+# 添加"Others"类别（总数-已知Ton数）
+summary <- rbind(summary, 
+            data.frame(Population = "Han", Category = "Ton", Subtype = "Others", Count = 23 - (11+3+3)),
+            data.frame(Population = "Tibetan", Category = "Ton", Subtype = "Others", Count = 95 - (35+38+11))
+)
+library(ggplot2)
+library(dplyr)
+
+# 自定义颜色（汉: lightpink, 藏: lightblue）
+
+color_palette <- c(
+  Common = "lightpink",   # 汉族保持粉色系
+  Rare = "lightblue",     # 藏族保持蓝色系
+  Singleton = "#FFF7BC",  # 浅黄色
+  Doubleton = "#FEC44F",  # 中等黄色
+  Tripleton = "#D95F0E",  # 深橙色
+  Others = "#CCCCCC"      # 保持灰色
+)
+# 数据整理（因子化排序）
+summary <- summary %>%
+  mutate(
+    Subtype = factor(Subtype, levels = c("Common", "Rare", "Singleton", "Doubleton", "Tripleton", "Others")),
+    Category = factor(Category, levels = c("Frequency", "Ton"))
+  )
+
+# 绘制堆积图
+ggplot(summary, aes(x = Category, y = Count, fill = Subtype)) +
+  geom_bar(stat = "identity", position = "stack", ,color = NA, width = 0.7) +
+  facet_wrap(~Population, ncol = 2, scales = "free_x") +  # 分面显示族群
+  scale_fill_manual(values = color_palette, name = "Subtype") +
+  labs(
+    title = "Genetic Variant Distribution in Han and Tibetan Populations",
+    x = "Classification Type",
+    y = "Number of Variants"
+  ) +
+  theme_bw() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "bottom",
+    strip.background = element_rect(fill = "white"),  # 分面标签背景
+    strip.text = element_text(size = 12, face = "bold"),
+  )
+
