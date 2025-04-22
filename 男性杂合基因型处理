@@ -1,0 +1,21 @@
+
+#!bin/bash
+# 修正男性X染色体杂合基因型为缺失
+MALE_IDS_Tibetan="male_samples.txt"
+MALE_IDS_Han="male_samples_Han.txt"
+bcftools annotate \
+  --set-id '%CHROM:%POS' \                # 保留染色体:位置作为ID[4](@ref)
+  --include '(CHROM=="X" || CHROM=="chrX")' \  # 精确限定X染色体[2](@ref)
+  -i "file=${MALE_IDS_Tibetan} && (GT=='0/1' || GT=='0|1')" \  # 匹配男性杂合[4](@ref)
+  --set-GT . \                            # 将匹配的GT设为缺失[4](@ref)
+  --threads 8 \
+  merged.chrX.154500000-154560000.vcf -Oz -o Tibetan.chrX.ed.vcf.gz
+bgzip -d Tibetan.chrX.ed.vcf.gz  # 解压后生成 merged.vcf
+bcftools annotate \
+  --set-id '%CHROM:%POS' \                # 保留染色体:位置作为ID[4](@ref)
+  --include '(CHROM=="X" || CHROM=="chrX")' \  # 精确限定X染色体[2](@ref)
+  -i "file=${MALE_IDS_Hann} && (GT=='0/1' || GT=='0|1')" \  # 匹配男性杂合[4](@ref)
+  --set-GT . \                            # 将匹配的GT设为缺失[4](@ref)
+  --threads 8 \
+  Han90.chrX.154500000-154560000.vcf -Oz -o Han.chrX.ed.vcf.gz
+bgzip -d Han.chrX.ed.vcf.gz  #
