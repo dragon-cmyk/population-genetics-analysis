@@ -1,0 +1,9 @@
+###bash脚本写作规范
+#########
+开头有shebang，shebang是在脚本第一行出现的以”#!”开头的注释，指明了当我们没有指定解释器的时候默认的解释器
+###注意bash脚本的开头和slurm脚本的开头不同，slurm是#!/bin/bash
+###可以使用cat /etc/shells 显示本机支持的解释器
+#!bin/bash
+
+
+使用which vcftools找到其绝对路径
