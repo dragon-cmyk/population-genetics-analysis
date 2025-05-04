@@ -1,1 +1,19 @@
+#!bin/bash
+###使用vcftools进行pi值计算
+###输入：vcf文件与样本ID的.txt文件（.txt文件中无表头，每一行是样本ID）
+###脚本中分行的后边不能加注释
+###注意：vcftools支持.gz的压缩文件，但需要将--vcf替换成--gzvcf
+###输入的vcf文件应该是大于G6PD基因区域的，一般在全染色体背景上做
+###pi值计算包括单点计算与窗口计算
 
+###单点计算
+vcftools --vcf input.vcf --keep sampleID.txt --site-pi --out output
+
+###窗口计算
+###对于窗口大小的选择，一般保持大部分窗口SNP>20，减少假阳性和稀释效应
+###由于使用vcftools曾报错找不到vcftools，因此使用which vcftools找到其绝对路径
+/share/apps/gene/vcftools-0.1.16/bin/vcftools --vcf Tibetan_subset.chrX.vcf \
+	--window-pi 10000 \  ###窗口大小
+	--window-pi-step 5000 \  ###步长，一般为窗口的一半
+	--keep selected_female.txt \  ###样本ID的txt文件
+	--out selected_female.chrX.Win10k-Step5k  ###输出文件名
